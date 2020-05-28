@@ -14,7 +14,10 @@ const routes = [
     path: "/search",
     name: "search",
     component: () => import("@/views/Search.vue"),
-    props: route => ({ searchQuery: route.query.query })
+    props: route => ({
+      searchQuery: route.query.query,
+      after: route.query.after
+    })
   }
 ];
 
