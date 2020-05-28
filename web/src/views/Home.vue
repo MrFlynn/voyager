@@ -7,14 +7,14 @@
           <div class="control is-expanded">
             <input
               v-model="searchQuery"
-              v-on:keyup.enter="search"
+              v-on:keyup.enter="search(searchQuery)"
               class="input"
               type="text"
               placeholder="Search..."
             />
           </div>
           <div class="control">
-            <a v-on:click="search" class="button is-dark">Go!</a>
+            <a v-on:click="search(searchQuery)" class="button is-dark">Go!</a>
           </div>
         </div>
       </div>
@@ -25,11 +25,12 @@
 
 <style lang="sass" scoped>
 .search-container
-  padding-top: 20em;
+  padding-top: 20em
+  margin: 1em
 </style>
 
 <script>
-import router from "@/router/index.js";
+import search from "@/components/searcher.js";
 
 export default {
   name: "Home",
@@ -39,14 +40,7 @@ export default {
     };
   },
   methods: {
-    search: function() {
-      if (this.searchQuery != null) {
-        router.push({
-          name: "search",
-          query: { query: encodeURI(this.searchQuery) }
-        });
-      }
-    }
+    search: search
   }
 };
 </script>
