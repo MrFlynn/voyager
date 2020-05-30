@@ -1,4 +1,5 @@
 <template>
+  <div>
   <div class="container">
     <div class="columns search-container">
       <div class="column"></div>
@@ -21,12 +22,20 @@
       <div class="column"></div>
     </div>
   </div>
+    <Footer />
+  </div>
 </template>
 
 <style lang="sass" scoped>
 .search-container
   padding-top: 20em
   margin: 1em
+
+.footer
+  position: absolute
+  width: 100%
+  bottom: 0
+  overflow: hidden
 </style>
 
 <script>
@@ -34,6 +43,9 @@ import search from "@/components/searcher.js";
 
 export default {
   name: "Home",
+  components: {
+    Footer
+  },
   data() {
     return {
       searchQuery: null
