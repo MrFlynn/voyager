@@ -31,6 +31,24 @@
               :description="result.description"
             />
           </ul>
+          <div class="field has-addons page-control">
+            <p class="control">
+              <button
+                v-on:click="changePage(-numResults)"
+                class="button is-dark"
+              >
+                <span>Previous</span>
+              </button>
+            </p>
+            <p class="control">
+              <button
+                v-on:click="changePage(numResults)"
+                class="button is-dark"
+              >
+                <span>Next</span>
+              </button>
+            </p>
+          </div>
         </div>
         <div class="column"></div>
       </div>
@@ -41,11 +59,17 @@
 <style lang="sass" scoped>
 .navbar
   padding: 0.5em
+
+.page-control
+  padding-top: 2em
+  display: flex
+  justify-content: center
+  align-items: center
 </style>
 
 <script>
 import router from "@/router/index.js";
-import search from "@/components/searcher.js";
+import searcher from "@/components/searcher.js";
 
 import SearchResult from "@/components/SearchResult.vue";
 
@@ -59,27 +83,20 @@ export default {
   data() {
     return {
       results: [],
-      newQuery: null
+      newQuery: null,
+      numResults: 10
     };
   },
-  created() {
-    if (this.searchQuery == null) {
-      router.replace("/");
-    }
-
-    var resultsUrl = `/api/search?query=${this.searchQuery}`;
-    if (this.after > 0) {
-      resultsUrl += `&after=${this.after}`;
-    }
-
-    axios
-      .get(resultsUrl)
-      .then(r => {
-        this.results = r.data;
-      })
-      .catch(e => {
-        console.log(e);
-      });
+  beforeRouteEnter(to, from, next) {
+    next(vm => {
+      vm.getResults();
+    });
+  },
+  beforeRouteUpdate(to, from, next) {
+    this.results = [];
+    next(vm => {
+      vm.getResults();
+    });
   },
   props: {
     searchQuery: {
@@ -91,8 +108,42 @@ export default {
       default: 0
     }
   },
+  watch: {
+    // eslint-disable-next-line
+    "$route": "getResults"
+  },
   methods: {
-    search: search
+    search(query) {
+      searcher(encodeURI(query));
+    },
+    getResults() {
+      if (this.searchQuery == null) {
+        router.replace("/");
+      }
+
+      var resultsUrl = `/api/search?query=${this.searchQuery}`;
+      if (this.after > 0) {
+        resultsUrl += `&after=${this.after}`;
+      }
+
+      axios
+        .get(resultsUrl)
+        .then(r => {
+          this.results = r.data;
+        })
+        .catch(e => {
+          console.log(e);
+        });
+    },
+    changePage(offset) {
+      if (
+        !(this.results.length < this.numResults) &&
+        this.after + offset >= 0
+      ) {
+        console.log(this.after);
+        searcher(this.searchQuery, this.after + parseInt(offset));
+      }
+    }
   }
 };
 </script>
