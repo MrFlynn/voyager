@@ -28,7 +28,7 @@
 
 <style lang="sass" scoped>
 .search-container
-  padding-top: 20em
+  padding-top: 30vh
   margin: 1em
 
 .footer
