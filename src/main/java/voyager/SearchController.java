@@ -2,12 +2,15 @@ package voyager;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.lucene.analysis.Analyzer;
+import org.apache.lucene.document.Document;
 import org.apache.lucene.index.DirectoryReader;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexWriterConfig;
 import org.apache.lucene.queryparser.classic.ParseException;
 import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.Query;
+import org.apache.lucene.search.ScoreDoc;
+import org.apache.lucene.search.TopDocs;
 import org.apache.lucene.store.RAMDirectory;
 import org.springframework.web.bind.annotation.*;
 
@@ -79,21 +82,50 @@ public class SearchController {
         }
         log.info("Successfully loaded web pages into queue");
 
-        for (int i = 0; i < 4; i++){
+        for (int i = 0; i < 7; i++){
             threadPoolExecutor.execute(new Writer(indexWriter, pages));
         }
 
         threadPoolExecutor.shutdown();
         threadPoolExecutor.awaitTermination(5, TimeUnit.MINUTES);
 
-        log.info("Number of docs in indexwriter: " + indexWriter.numDocs());
+        log.info("Number of docs in indexwriter: " + indexWriter.numDocs() + 1);
 
         indexWriter.close();
     }
 
     @GetMapping("/search")
-    public List<Article> search( //TODO switch to List<Article>
-            @RequestParam(required = false, defaultValue = "")  String query,
-            @RequestParam(required = false, defaultValue = "")  Integer after) throws ParseException {
+    public List<Result> search( //TODO switch to List<Article>
+         @RequestParam(required = false, defaultValue = "")  String query,
+         @RequestParam(required = false, defaultValue = "0")  String after)
+            throws ParseException, IOException {
+
+        List<Result> request_body = new ArrayList<Result>();
+        int offset = Integer.parseInt(after);
+        int maxcount = 0;
+        log.info("Query: " + query);
+
+        maxcount = after.equals("0") ? maxcount = 10 : 10 + offset;
+
+        Query q = parser.parse(query);
+        TopDocs topDocs = indexSearcher.search(q, maxcount);
+        ScoreDoc[] docs = topDocs.scoreDocs;
+
+        int startpos = maxcount - 9;
+
+        if ( maxcount > docs.length ){
+            if (maxcount - 9 <= docs.length)
+                maxcount = docs.length;
+            else return new ArrayList<Result>();
+        }
+
+        for (int i = startpos ; i <= maxcount; i++){
+            Document doc = indexSearcher.doc(docs[i-1].doc);
+            Result res = new Result(doc.getField("URL").stringValue(),
+                    doc.getField("title").stringValue());
+            request_body.add(res);
+        }
+
+        return request_body;
     }
 }

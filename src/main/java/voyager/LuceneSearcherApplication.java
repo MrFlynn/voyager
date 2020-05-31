@@ -13,5 +13,7 @@ public class LuceneSearcherApplication {
         SearchController.buildIndex();
 
         SpringApplication.run(LuceneSearcherApplication.class, args);
+        SearchController.indexWriter.close();
+        SearchController.directory.close();
     }
 }
