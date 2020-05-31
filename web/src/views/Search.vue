@@ -110,7 +110,7 @@ export default {
   },
   watch: {
     // eslint-disable-next-line
-    "$route": "getResults"
+    "$route": "getResults" // Honestly I have no idea why this is needed.
   },
   methods: {
     search(query) {
@@ -138,10 +138,9 @@ export default {
     changePage(offset) {
       if (
         !(this.results.length < this.numResults) &&
-        this.after + offset >= 0
+        parseInt(this.after) + parseInt(offset) >= 0
       ) {
-        console.log(this.after);
-        searcher(this.searchQuery, this.after + parseInt(offset));
+        searcher(this.searchQuery, parseInt(this.after) + parseInt(offset));
       }
     }
   }
