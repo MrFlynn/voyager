@@ -24,7 +24,7 @@
       <div class="columns results-container">
         <div class="column"></div>
         <div class="column is-two-thirds">
-          <ul v-for="result in results" :key="result.url">
+          <ul v-for="(result, idx) in results" :key="idx">
             <SearchResult
               :title="result.title"
               :url="result.url"
@@ -75,10 +75,33 @@ import SearchResult from "@/components/SearchResult.vue";
 
 import axios from "axios";
 
+const getSearchResults = (query, after, callback) => {
+  if (query == null || query == "") {
+    router.replace("/");
+  }
+
+  var resultsUrl = `/api/search?query=${query}`;
+  if (after > 0) {
+    resultsUrl += `&after=${after}`;
+  }
+
+  axios
+    .get(resultsUrl)
+    .then(r => {
+      callback(null, r.data);
+    })
+    .catch(e => {
+      callback(e, []);
+    });
+};
+
 export default {
   name: "Search",
   components: {
     SearchResult
+  },
+  computed: {
+    console: () => console
   },
   data() {
     return {
@@ -87,15 +110,27 @@ export default {
       numResults: 10
     };
   },
-  beforeRouteEnter(to, from, next) {
-    next(vm => {
-      vm.getResults();
+  created() {
+    getSearchResults(this.searchQuery, this.after, (err, result) => {
+      if (err) {
+        console.error(err);
+        router.replace("/error");
+      }
+
+      this.results = result;
     });
   },
   beforeRouteUpdate(to, from, next) {
-    this.results = [];
-    next(vm => {
-      vm.getResults();
+    getSearchResults(to.query.query, to.query.after, (err, result) => {
+      if (err) {
+        console.error(err);
+        router.replace("/error");
+      } else if (result.length == 0) {
+        return;
+      } else {
+        this.results = result;
+        next();
+      }
     });
   },
   props: {
@@ -108,32 +143,9 @@ export default {
       default: 0
     }
   },
-  watch: {
-    // eslint-disable-next-line
-    "$route": "getResults" // Honestly I have no idea why this is needed.
-  },
   methods: {
     search(query) {
       searcher(encodeURI(query));
-    },
-    getResults() {
-      if (this.searchQuery == null) {
-        router.replace("/");
-      }
-
-      var resultsUrl = `/api/search?query=${this.searchQuery}`;
-      if (this.after > 0) {
-        resultsUrl += `&after=${this.after}`;
-      }
-
-      axios
-        .get(resultsUrl)
-        .then(r => {
-          this.results = r.data;
-        })
-        .catch(e => {
-          console.log(e);
-        });
     },
     changePage(offset) {
       if (

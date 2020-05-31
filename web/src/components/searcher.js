@@ -7,7 +7,7 @@ const searcher = (query, after) => {
     }
 
     router.push({
-      name: "search",
+      name: "Search",
       query: { query, after }
     });
   }
