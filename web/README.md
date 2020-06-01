@@ -1,29 +1,11 @@
 # web
 
-## Project setup
-```
-yarn install
-```
+This is the web UI for the project. 
 
-### Compiles and hot-reloads for development
-```
-yarn run serve
-```
+## Running the Web Interface
+You will need [Docker](docker.com) installed to do this.
 
-### Compiles and minifies for production
+```bash
+$ docker build -t voyager-web:latest .
+$ docker run -p "80:80" voyager-web:latest
 ```
-yarn run build
-```
-
-### Run your tests
-```
-yarn run test
-```
-
-### Lints and fixes files
-```
-yarn run lint
-```
-
-### Customize configuration
-See [Configuration Reference](https://cli.vuejs.org/config/).
