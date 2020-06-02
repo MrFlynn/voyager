@@ -1,0 +1,13 @@
+# Workspace-only files.
+.browserlistsrc
+node_modules/
+
+# Docker.
+Dockerfile
+docker-compose.yml
+.dockerignore
+
+# Repository only.
+.git/
+.gitignore
+README.md
