@@ -36,7 +36,7 @@ public class Writer implements Runnable {
                     if (source.getFirstElement("title") != null)
                         title = source.getFirstElement("title").getContent().toString();
                     else
-                        title = article.URL;
+                        title = "";
 
                     TextExtractor text = new TextExtractor(source);
                     Document doc = new Document();

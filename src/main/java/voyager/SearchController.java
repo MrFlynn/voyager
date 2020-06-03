@@ -70,10 +70,10 @@ public class SearchController {
         return path.toString().replace("|", "/");
     }
 
-    public static void buildIndex() throws IOException, InterruptedException {
+    public static void buildIndex(String directory) throws IOException, InterruptedException {
         log.info("Loading scraped web pages into queue");
-        File folder = new File("collection");
-        Path base = Paths.get("collection");
+        File folder = new File(directory);
+        Path base = Paths.get(directory);
 
         for (final File fileEntry : folder.listFiles()) {
             String pageSource = FileUtils.readFileToString(fileEntry, StandardCharsets.UTF_8);
