@@ -1,0 +1,20 @@
+# Workspace configurations.
+.idea/
+
+# Gradle configurations, local files, etc.
+.gradle/
+build/
+gradle/
+
+# Github files.
+.github/
+
+# Container setup.
+Dockerfile
+.dockerignore
+
+# Outside scope.
+web/
+
+# Human readable files.
+README.md
