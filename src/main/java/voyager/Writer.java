@@ -31,6 +31,7 @@ public class Writer implements Runnable {
                 Article article = this.pages.poll();
                 if (article != null){
                     Source source = new Source(article.pageSource);
+                    source.fullSequentialParse();
 
                     String title = "";
                     if (source.getFirstElement("title") != null)

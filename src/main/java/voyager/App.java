@@ -25,6 +25,12 @@ public class App implements Callable<Integer> {
     )
     private boolean test;
 
+    @Option(
+            names = {"-t", "--threads"},
+            description = "Number of threads to run application with."
+    )
+    private Integer threads = 4;
+
     @Parameters(
             index = "0",
             description = "A directory containing HTML files used to build index."
@@ -39,11 +45,16 @@ public class App implements Callable<Integer> {
         return htmlDirectory;
     }
 
+    public Integer getThreads() {
+        return threads;
+    }
+
     @Override
     public Integer call() throws Exception {
         if (!this.test) {
-            LuceneSearcherApplication.start(this.getHtmlDirectory(), this.getPort());
+            LuceneSearcherApplication.start(this.getHtmlDirectory(), this.getPort(), this.getThreads());
         }
+
         return 0;
     }
 

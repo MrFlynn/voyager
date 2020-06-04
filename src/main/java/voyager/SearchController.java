@@ -25,14 +25,14 @@ import java.util.List;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.queryparser.classic.QueryParser;
+
+import java.util.Objects;
 import java.util.concurrent.*;
 import java.util.logging.Logger;
-
 
 @RestController
 @RequestMapping("/api")
 @CrossOrigin("*")
-
 public class SearchController {
     static Directory directory = new RAMDirectory();
     static Analyzer analyzer = new StandardAnalyzer();
@@ -42,7 +42,6 @@ public class SearchController {
     DirectoryReader indexReader = DirectoryReader.open(directory);
     IndexSearcher indexSearcher = new IndexSearcher(indexReader);
     QueryParser parser = new QueryParser("content", analyzer);
-
 
     private final static Logger log = Logger.getLogger(Writer.class.getName());
 
@@ -63,26 +62,29 @@ public class SearchController {
             new LinkedBlockingQueue<>()
     );
 
-    public SearchController() throws IOException {
-    }
+    public SearchController() throws IOException { }
 
     public static String convertToURL(Path path){
         return path.toString().replace("|", "/");
     }
 
-    public static void buildIndex(String directory) throws IOException, InterruptedException {
+    public static void buildIndex(String inputDirectory, Integer threads) throws IOException, InterruptedException {
         log.info("Loading scraped web pages into queue");
-        File folder = new File(directory);
-        Path base = Paths.get(directory);
+        File folder = new File(inputDirectory);
+        Path base = Paths.get(inputDirectory);
 
-        for (final File fileEntry : folder.listFiles()) {
+        for (final File fileEntry : Objects.requireNonNull(folder.listFiles())) {
             String pageSource = FileUtils.readFileToString(fileEntry, StandardCharsets.UTF_8);
             Article article = new Article(pageSource, convertToURL(base.relativize(fileEntry.toPath())));
             pages.add(article);
         }
         log.info("Successfully loaded web pages into queue");
 
-        for (int i = 0; i < 7; i++){
+        // Resize pool if user changes default.
+        threadPoolExecutor.setMaximumPoolSize(threads);
+        threadPoolExecutor.setCorePoolSize(threads);
+
+        for (int i = 0; i < threads; i++) {
             threadPoolExecutor.execute(new Writer(indexWriter, pages));
         }
 
@@ -95,34 +97,35 @@ public class SearchController {
     }
 
     @GetMapping("/search")
-    public List<Result> search( //TODO switch to List<Article>
-         @RequestParam(required = false, defaultValue = "")  String query,
-         @RequestParam(required = false, defaultValue = "0")  String after)
+    public List<Result> search(
+            //TODO switch to List<Article>
+            @RequestParam(required = false, defaultValue = "")  String query,
+            @RequestParam(required = false, defaultValue = "0")  String after)
             throws ParseException, IOException {
 
-        List<Result> request_body = new ArrayList<Result>();
+        List<Result> request_body = new ArrayList<>();
         int offset = Integer.parseInt(after);
-        int maxcount = 0;
         log.info("Query: " + query);
 
-        maxcount = after.equals("0") ? maxcount = 10 : 10 + offset;
+        int maxcount = after.equals("0") ? 10 : 10 + offset;
 
         Query q = parser.parse(query);
         TopDocs topDocs = indexSearcher.search(q, maxcount);
         ScoreDoc[] docs = topDocs.scoreDocs;
 
-        int startpos = maxcount - 9;
-
-        if ( maxcount > docs.length ){
+        if (maxcount > docs.length) {
             if (maxcount - 9 <= docs.length)
                 maxcount = docs.length;
-            else return new ArrayList<Result>();
+            else
+                return new ArrayList<Result>();
         }
 
-        for (int i = startpos ; i <= maxcount; i++){
+        for (int i = (maxcount - 9); i <= maxcount; i++) {
             Document doc = indexSearcher.doc(docs[i-1].doc);
-            Result res = new Result(doc.getField("URL").stringValue(),
-                    doc.getField("title").stringValue());
+            Result res = new Result(
+                    doc.getField("URL").stringValue(),
+                    doc.getField("title").stringValue()
+            );
             request_body.add(res);
         }
 
