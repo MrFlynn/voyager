@@ -5,7 +5,6 @@ import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.Parameters;
 
-import java.nio.file.Path;
 import java.util.concurrent.Callable;
 
 @Command(
@@ -19,22 +18,32 @@ public class App implements Callable<Integer> {
     )
     private Integer port = 5000;
 
+    @Option(
+            names = {"--test"},
+            description = "Skip execution and run tests.",
+            hidden = true
+    )
+    private boolean test;
+
     @Parameters(
             index = "0",
             description = "A directory containing HTML files used to build index."
     )
-    private Path htmlDirectory;
+    private String htmlDirectory;
 
     public Integer getPort() {
-        return this.port;
+        return port;
     }
 
-    public Path getHtmlDirectory() {
-        return this.htmlDirectory;
+    public String getHtmlDirectory() {
+        return htmlDirectory;
     }
 
     @Override
     public Integer call() throws Exception {
+        if (!this.test) {
+            LuceneSearcherApplication.start(this.getHtmlDirectory(), this.getPort());
+        }
         return 0;
     }
 

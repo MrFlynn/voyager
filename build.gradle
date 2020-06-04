@@ -13,6 +13,9 @@ plugins {
     // Apply the application plugin to add support for building a CLI application.
     id 'application'
 
+    id 'org.springframework.boot' version '2.0.5.RELEASE'
+    id 'io.spring.dependency-management' version '1.0.7.RELEASE'
+
     // For building fat jars.
     id 'com.github.johnrengelman.shadow' version '5.2.0'
 }
@@ -37,6 +40,27 @@ dependencies {
 
     // CLI.
     implementation 'info.picocli:picocli:4.2.0'
+
+    implementation 'org.apache.lucene:lucene-core:7.3.0'
+    implementation 'org.apache.lucene:lucene-memory:8.5.2'
+    implementation 'org.apache.lucene:lucene-queryparser:8.3.1'
+    implementation 'net.htmlparser.jericho:jericho-html:3.1'
+    implementation 'commons-io:commons-io:2.6'
+    implementation 'org.springframework.boot:spring-boot-dependencies:2.0.5.RELEASE'
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+
+    components {
+        withModule('org.springframework:spring-beans') {
+            allVariants {
+                withDependencyConstraints {
+                    // Need to patch constraints because snakeyaml is an optional dependency
+                    it.findAll { it.name == 'snakeyaml' }.each { it.version { strictly '1.19' } }
+                }
+            }
+        }
+    }
 }
 
 application {
@@ -51,4 +75,8 @@ test {
     beforeTest { descriptor ->
         logger.lifecycle("Running test: ${descriptor}")
     }
+}
+
+bootJar {
+    mainClassName = 'LuceneSearcherApplication.App'
 }
