@@ -20,7 +20,7 @@ class AppTest {
 
     @Test
     void testCompleteParams() {
-        int exitStatus = cmd.execute("/workdir", "--port=5001");
+        int exitStatus = cmd.execute("/workdir", "--port=5001", "--test");
         assertAll(
                 () -> assertEquals(0, exitStatus),
                 () -> assertEquals(5001, app.getPort()),
@@ -36,7 +36,7 @@ class AppTest {
 
     @Test
     void testDefaultPort() {
-        int exitStatus = cmd.execute("/workdir");
+        int exitStatus = cmd.execute("/workdir", "--test");
         assertAll(
                 () -> assertEquals(0, exitStatus),
                 () -> assertEquals(5000, app.getPort())

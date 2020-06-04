@@ -18,31 +18,32 @@ public class App implements Callable<Integer> {
     )
     private Integer port = 5000;
 
+    @Option(
+            names = {"--test"},
+            description = "Skip execution and run tests.",
+            hidden = true
+    )
+    private boolean test;
+
     @Parameters(
             index = "0",
             description = "A directory containing HTML files used to build index."
     )
-    private static String htmlDirectory;
+    private String htmlDirectory;
 
-    public static Integer getPort() {
+    public Integer getPort() {
         return port;
     }
 
-    public static String getHtmlDirectory() {
+    public String getHtmlDirectory() {
         return htmlDirectory;
-    }
-
-    public Integer getPort() {
-        return this.port;
-    }
-
-    public Path getHtmlDirectory() {
-        return this.htmlDirectory;
     }
 
     @Override
     public Integer call() throws Exception {
-        LuceneSearcherApplication.start(App.getHtmlDirectory(), App.getPort());
+        if (!this.test) {
+            LuceneSearcherApplication.start(this.getHtmlDirectory(), this.getPort());
+        }
         return 0;
     }
 
