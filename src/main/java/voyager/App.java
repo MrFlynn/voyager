@@ -16,7 +16,7 @@ public class App implements Callable<Integer> {
             names = {"-p", "--port"},
             description = "Which port the HTTP server should run on."
     )
-    private static Integer port = 5000;
+    private Integer port = 5000;
 
     @Parameters(
             index = "0",
@@ -32,8 +32,17 @@ public class App implements Callable<Integer> {
         return htmlDirectory;
     }
 
+    public Integer getPort() {
+        return this.port;
+    }
+
+    public Path getHtmlDirectory() {
+        return this.htmlDirectory;
+    }
+
     @Override
     public Integer call() throws Exception {
+        LuceneSearcherApplication.start(App.getHtmlDirectory(), App.getPort());
         return 0;
     }
 
@@ -42,7 +51,6 @@ public class App implements Callable<Integer> {
 
         try {
             exitStatus = new CommandLine(new App()).execute(args);
-            LuceneSearcherApplication.start(App.getHtmlDirectory(), App.getPort());
         } catch (Exception e) {
             exitStatus = 1;
             System.err.println(e.toString());
