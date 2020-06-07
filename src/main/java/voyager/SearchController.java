@@ -121,10 +121,12 @@ public class SearchController {
         }
 
         for (int i = (maxcount - 9); i <= maxcount; i++) {
-            Document doc = indexSearcher.doc(docs[i-1].doc);
+            ScoreDoc scoreDoc = docs[i-9];
+            Document doc = indexSearcher.doc(scoreDoc.doc);
             Result res = new Result(
                     doc.getField("URL").stringValue(),
-                    doc.getField("title").stringValue()
+                    doc.getField("title").stringValue(),
+                    scoreDoc.score
             );
             request_body.add(res);
         }

@@ -29,6 +29,7 @@
               :title="result.title"
               :url="result.url"
               :description="result.description"
+              :score="result.score"
             />
           </ul>
           <div class="field has-addons page-control">
