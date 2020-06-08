@@ -10,14 +10,17 @@ RUN gradle clean shadowJar
 # Primary container.
 FROM openjdk:13-jdk-alpine
 
+# Add healthcheck dependency.
+RUN apk add curl
+
 # Copy JAR from build container.
 WORKDIR /app
-COPY --from=build /app/builds/libs/voyager-1.0-all.jar /app/voyager.jar
+COPY --from=build /app/build/libs/voyager-1.0-all.jar voyager.jar
 
 # Expose volume with web pages.
 VOLUME /data
 
-ENTRYPOINT ["java", "-jar", "/app/voyager.jar"]
+ENTRYPOINT [ "java", "-jar", "voyager.jar" ]
 
 EXPOSE 5000
 
