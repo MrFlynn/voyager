@@ -1,0 +1,20 @@
+version: '3'
+
+services:
+  backend:
+    image: docker.pkg.github.com/mrflynn/voyager/backend:latest
+    ports:
+      - "5000"
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "localhost:5000/api/health" ]
+      interval: 10s
+      timeout: 2s
+      retries: 5
+    volumes:
+      - ${DATA_DIR}:/data:ro
+  web:
+    image: docker.pkg.github.com/mrflynn/voyager/web:latest
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
