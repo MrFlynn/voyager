@@ -121,7 +121,7 @@ public class SearchController {
         }
 
         for (int i = (maxcount - 9); i <= maxcount; i++) {
-            ScoreDoc scoreDoc = docs[i-9];
+            ScoreDoc scoreDoc = docs[i-1];
             Document doc = indexSearcher.doc(scoreDoc.doc);
             Result res = new Result(
                     doc.getField("URL").stringValue(),
