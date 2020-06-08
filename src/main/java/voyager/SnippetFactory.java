@@ -11,10 +11,11 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Map;
 import java.util.HashMap;
+import java.util.Comparator;
+import java.util.Stack;
 
 import org.jsoup.nodes.Document;
 import org.jsoup.Jsoup;
-// import org.jsoup.nodes;
 
 class SnippetFactory {
 
@@ -30,30 +31,25 @@ class SnippetFactory {
 
             Document doc = Jsoup.parse(file, null);
 
-            String[] bodyTextWords = doc.body().text().toLowerCase().split(SPLIT_REGEX);
+            String[] bodyTextWords = doc.body().text().split(SPLIT_REGEX);
             List<Integer> queryMatches = getQueryMatches(bodyTextWords, queryTerms);
 
-            // for (int i = 0; i < 15; i++)
-            //     getClustersKMeans(queryMatches, 3);
+            // Try different numbers of clusters, 1 thru 4
+            // Then, pick the best k value from the clusters generated
             List< List<int[]> > setsOfClusters = new ArrayList< List<int[]> >();
             for (int i = 1; i <= 4; i++) {
 
                 List<int[]> clusters = getClustersKMeans(queryMatches, i);
                 setsOfClusters.add(clusters);
-                // System.out.println("k = "  + i + ":");
-                // System.out.println(clustersToString(clusters));
-                // System.out.println();
             }
-
             int k = pickK(setsOfClusters);
-            System.out.println("Best k: " + k);
 
             List<int[]> chosenCluster = setsOfClusters.get(k - 1);
             sb.append(clustersToSnippet(bodyTextWords,
                                         queryTerms,
                                         chosenCluster,
-                                        255,
-                                        30));
+                                        255,    // Avg length of snippet
+                                        30));   // Range in either direction of avg
 
         } catch (IOException e) {
 
@@ -69,11 +65,12 @@ class SnippetFactory {
                                             int targetCharCount, int range) {
 
         StringBuilder snippet = new StringBuilder();
+        snippet.append(clusters.get(0)[0] == 0 ? "" : "... ");  // Prepend ... unless clusters start at beginning
         int lo = targetCharCount - range;
         int hi = targetCharCount + range;
 
         // Sort clusters by their density,
-        // in descending order (i.e. densest first)
+        // in descending order (i.e. most dense first)
         Collections.sort(clusters, new Comparator<int[]>() {
 
             public int compare(int[] interval1, int[] interval2) {
@@ -93,21 +90,72 @@ class SnippetFactory {
             int[] currentCluster = clusters.get(clusterIndex);
             clusterIndex++;
 
+
+
+            // Add surrounding text before the interval
+
+            // If there's space (factoring in the interval),
+            // prepend up to 7 words
+            Stack<String> surroundingTextLeft = new Stack<String>();
+            int leftCharCount = 0;
+
+            // Start before the current interval, and go left,
+            // pushing all eligible strings into the stack
+            for (int i = currentCluster[0] - 1;
+                i >= 0 && i >= currentCluster[0] - 7;
+                i--) {
+
+                int charCount = bodyTextWords[i].length();
+                charCount++;    // account for space " "
+
+                // Break out if bodyTextWords[i]
+                // would be out of range,
+                // i.e. if the length would be above hi
+                if (snippet.length() + leftCharCount + charCount > hi)
+                    break;
+
+                surroundingTextLeft.push(bodyTextWords[i] + " ");
+                leftCharCount += charCount;
+            }
+            // Then, pop stack onto the end of the snippet
+            while (!surroundingTextLeft.isEmpty())
+                snippet.append(surroundingTextLeft.pop());
+            
+
+
+            // Add the words inside the interval
             for (int i = currentCluster[0]; i <= currentCluster[1]; i++) {
 
                 // If adding this word would bring us out of range,
                 // break out
-                if (snippet.length() + bodyTextWords[i].length + 4 > hi)    // account for "... "
+                if (snippet.length() + bodyTextWords[i].length() + 4 > hi)    // account for "... "
                     break;
 
                 snippet.append(bodyTextWords[i]);
                 snippet.append(i == currentCluster[1] ? "" : " ");  // only append spaces in the middle
             }
 
+
+
+            // If possible, append up to 7 words after the interval
+            for (int i = currentCluster[1] + 1;
+                i < bodyTextWords.length && i < currentCluster[1] + 1 + 7;
+                i++) {
+
+                int charCount = bodyTextWords[i].length();
+                charCount++;    // account for space " "
+
+                if (snippet.length() + charCount > hi)
+                    break;
+
+                snippet.append(" " + bodyTextWords[i]);
+            }
+
             // Separate clusters of words with ...
             snippet.append("... ");
 
         } while (lo > snippet.length() && clusterIndex < clusters.size());
+
 
 
         return snippet.toString();
@@ -201,13 +249,6 @@ class SnippetFactory {
 
         } while (!centroids.equals(prevCentroids));
 
-
-        // System.out.println("===============");
-        // System.out.println("Query matches: " + queryMatches);
-        // System.out.println("Centroids: " + centroids);
-        // System.out.println("Clusters: " + clustersToString(clusters));
-        // System.out.println();
-
         return clusters;   
     }
 
@@ -242,8 +283,6 @@ class SnippetFactory {
                 kToVariance.put(clusters.size(), variance(clusters));
             }
         }
-
-        System.out.println("kToVariance: " + kToVariance);
 
 
         
@@ -291,7 +330,7 @@ class SnippetFactory {
         List<Integer> occurrences = new ArrayList<Integer>();
 
         for (int i = 0; i < bodyTextWords.length; i++)
-            if (queryTerms.contains(bodyTextWords[i]))
+            if (queryTerms.contains(bodyTextWords[i].toLowerCase()))
                 occurrences.add(i);
         
         return occurrences;
@@ -318,9 +357,10 @@ class SnippetFactory {
 
         File testFile = new File("/mnt/c/Ryan/Work/College/UCR/Spring 2020/CS_172/Projects/sample_scrape/output/https___www.cs.ucr.edu_~mchow009_teaching_cs147_winter20_lab4");
         String snippet = SnippetFactory.getSnippet(testFile, query);
+        System.out.println("Snippet:\n" + snippet);
     }
 
-    private double clusterDensity(String[] bodyTextWords, Set<String> queryTerms, int[] interval) {
+    private static double clusterDensity(String[] bodyTextWords, Set<String> queryTerms, int[] interval) {
 
         int freq = 0;
 
@@ -336,7 +376,7 @@ class SnippetFactory {
     // NLTK's list of english stopwords,
     // taken from here:
     // https://gist.github.com/sebleier/554280
-    private Set<String> getStopwords() {
+    private static Set<String> getStopwords() {
 
         if (SnippetFactory.stopwords != null)
             return SnippetFactory.stopwords;
@@ -474,7 +514,6 @@ class SnippetFactory {
         return SnippetFactory.stopwords;
     }
 
-    // @TODO: handle punctuation better
     private static final String SPLIT_REGEX = " ";
 
     // Please access through getStopwords(),
