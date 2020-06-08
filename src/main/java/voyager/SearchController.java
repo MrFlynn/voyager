@@ -96,6 +96,11 @@ public class SearchController {
         indexWriter.close();
     }
 
+    @GetMapping("/health")
+    public String health() {
+        return "OK";
+    }
+
     @GetMapping("/search")
     public List<Result> search(
             //TODO switch to List<Article>
