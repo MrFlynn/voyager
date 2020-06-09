@@ -1,4 +1,7 @@
 # voyager
+
+![Build](https://github.com/MrFlynn/voyager/workflows/Build/badge.svg)
+
 A lucene-based web search engine for CS172: Information Retrieval
 
 ### Running the Application
