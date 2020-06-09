@@ -37,7 +37,7 @@ jobs:
           password: ${{ secrets.DOCKER_REGISTRY_KEY }}
       - name: Build image
         run: |
-          docker build -t mrflynn/voyager-web:${GITHUB_REF##*/} .
+          docker build -t mrflynn/voyager-web:${GITHUB_REF##*/} web/
       - name: Tag with latest
         run: |
           docker tag mrflynn/voyager-web:${GITHUB_REF##*/} \
