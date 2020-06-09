@@ -17,7 +17,7 @@ import java.util.Stack;
 import org.jsoup.nodes.Document;
 import org.jsoup.Jsoup;
 
-class SnippetFactory {
+public class SnippetFactory {
 
 
 
@@ -71,8 +71,7 @@ class SnippetFactory {
         // then generate a snippet based solely on the document
         // (not the query)
         if (queryMatches.isEmpty())
-            return "";
-            // sb.append(uninformedSnippet(bodyTextWords, 255, 30));
+            sb.append(uninformedSnippet(bodyTextWords, 255, 30));
 
         else {
 
