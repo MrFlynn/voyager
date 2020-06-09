@@ -2,10 +2,11 @@ package voyager;
 
 import java.io.File;
 import java.io.IOException;
+import java.lang.Math;
+import java.net.URL;
 import java.util.Arrays;
 import java.util.Set;
 import java.util.HashSet;
-import java.lang.Math;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -21,15 +22,15 @@ public class SnippetFactory {
 
 
 
-
-    public static String getSnippet(String url, String query) {
+    // Wrapper for getSnippet(bodyText, query)
+    public static String getSnippet(URL url, String query) {
 
         StringBuilder sb = new StringBuilder();
 
         try {
 
-            Document doc = Jsoup.connect(url).get();
-            sb.append(getSnippet(doc, query));
+            Document doc = Jsoup.connect(url.toString()).get();
+            sb.append(getSnippet(doc.body().text(), query));
 
         } catch (IOException e) {
 
@@ -40,6 +41,7 @@ public class SnippetFactory {
         return sb.toString();
     }
 
+    // Wrapper for getSnippet(bodyText, query)
     public static String getSnippet(File file, String query) {
 
         StringBuilder sb = new StringBuilder();
@@ -47,7 +49,7 @@ public class SnippetFactory {
         try {
 
             Document doc = Jsoup.parse(file, null);
-            sb.append(getSnippet(doc, query));
+            sb.append(getSnippet(doc.body().text(), query));
 
         } catch (IOException e) {
 
@@ -58,13 +60,15 @@ public class SnippetFactory {
         return sb.toString();
     }
 
-    private static String getSnippet(Document doc, String query) {
+    public static String getSnippet(String bodyText, String query) {
 
         StringBuilder sb = new StringBuilder();
+
+        String[] bodyTextWords = bodyText.split(SPLIT_REGEX);
+
         Set<String> queryTerms = new HashSet<String>(Arrays.asList(query.toLowerCase().split(SPLIT_REGEX)));
         queryTerms.removeAll(getStopwords());
 
-        String[] bodyTextWords = doc.body().text().split(SPLIT_REGEX);
         List<Integer> queryMatches = getQueryMatches(bodyTextWords, queryTerms);
 
         // If there are no query matches,
