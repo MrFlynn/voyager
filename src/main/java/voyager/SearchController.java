@@ -122,9 +122,11 @@ public class SearchController {
 
         for (int i = (maxcount - 9); i <= maxcount; i++) {
             Document doc = indexSearcher.doc(docs[i-1].doc);
+            String snippet = SnippetFactory.getSnippet(doc.getField("content").stringValue(), query);
             Result res = new Result(
                     doc.getField("URL").stringValue(),
-                    doc.getField("title").stringValue()
+                    doc.getField("title").stringValue(),
+                    snippet
             );
             request_body.add(res);
         }
