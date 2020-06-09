@@ -21,18 +21,60 @@ class SnippetFactory {
 
 
 
+
+    public static String getSnippet(String url, String query) {
+
+        StringBuilder sb = new StringBuilder();
+
+        try {
+
+            Document doc = Jsoup.connect(url).get();
+            sb.append(getSnippet(doc, query));
+
+        } catch (IOException e) {
+
+            System.err.println("Jsoup couldn't connect to \"" + url + "\"");
+            sb.append("A snippet couldn't be produced for the url " + url);
+        }
+
+        return sb.toString();
+    }
+
     public static String getSnippet(File file, String query) {
 
         StringBuilder sb = new StringBuilder();
 
-        Set<String> queryTerms = new HashSet<String>(Arrays.asList(query.toLowerCase().split(SPLIT_REGEX)));
-
         try {
 
             Document doc = Jsoup.parse(file, null);
+            sb.append(getSnippet(doc, query));
 
-            String[] bodyTextWords = doc.body().text().split(SPLIT_REGEX);
-            List<Integer> queryMatches = getQueryMatches(bodyTextWords, queryTerms);
+        } catch (IOException e) {
+
+            System.err.println("Jsoup encountered an error parsing " + file.getName());
+            sb.append("A snippet couldn't be produced for the file " + file.getName());
+        }
+
+        return sb.toString();
+    }
+
+    private static String getSnippet(Document doc, String query) {
+
+        StringBuilder sb = new StringBuilder();
+        Set<String> queryTerms = new HashSet<String>(Arrays.asList(query.toLowerCase().split(SPLIT_REGEX)));
+        queryTerms.removeAll(getStopwords());
+
+        String[] bodyTextWords = doc.body().text().split(SPLIT_REGEX);
+        List<Integer> queryMatches = getQueryMatches(bodyTextWords, queryTerms);
+
+        // If there are no query matches,
+        // then generate a snippet based solely on the document
+        // (not the query)
+        if (queryMatches.isEmpty())
+            return "";
+            // sb.append(uninformedSnippet(bodyTextWords, 255, 30));
+
+        else {
 
             // Try different numbers of clusters, 1 thru 4
             // Then, pick the best k value from the clusters generated
@@ -50,14 +92,34 @@ class SnippetFactory {
                                         chosenCluster,
                                         255,    // Avg length of snippet
                                         30));   // Range in either direction of avg
-
-        } catch (IOException e) {
-
-            System.err.println("Jsoup encountered an error parsing " + file.getName());
-            sb.append("A snippet couldn't be produced for the file " + file.getName());
         }
 
         return sb.toString();
+    }
+
+    private static String uninformedSnippet(String[] bodyTextWords,
+                                            int targetCharCount, int range) {
+
+        StringBuilder snippet = new StringBuilder();
+        int charCount = 0;
+        int lo = Math.max(0, targetCharCount - range);
+        int hi = targetCharCount + range;
+        hi -= 4;    // account for trailing "... "
+
+        for (String word : bodyTextWords) {
+
+            if (charCount + word.length() + 1 < hi) {
+
+                snippet.append(word + " ");
+                charCount += word.length() + 1;
+            }
+
+            else break;
+        }
+
+        snippet.append("... ");
+
+        return snippet.toString();
     }
 
     private static String clustersToSnippet(String[] bodyTextWords, Set<String> queryTerms,
@@ -66,7 +128,7 @@ class SnippetFactory {
 
         StringBuilder snippet = new StringBuilder();
         snippet.append(clusters.get(0)[0] == 0 ? "" : "... ");  // Prepend ... unless clusters start at beginning
-        int lo = targetCharCount - range;
+        int lo = Math.max(0, targetCharCount - range);
         int hi = targetCharCount + range;
 
         // Sort clusters by their density,
@@ -173,7 +235,7 @@ class SnippetFactory {
         // Pick k random data points from the line
         Collections.shuffle(queryMatches);  // this way, guaranteed no duplicates
         List<Integer> centroids = new ArrayList<Integer>();
-        for (int i = 0; i < k; i++)
+        for (int i = 0; i < Math.min(queryMatches.size(), k); i++)
             centroids.add(queryMatches.get(i)); // fetches in random order
         Collections.sort(centroids);
         Collections.sort(queryMatches); // clean up after yourself
@@ -336,30 +398,6 @@ class SnippetFactory {
         return occurrences;
     }
 
-    public static void test(String query) {
-
-        // File dir = new File("/mnt/c/Ryan/Work/College/UCR/Spring 2020/CS_172/Projects/sample_scrape/output");
-        // File[] directoryListing = dir.listFiles();
-
-        // if (directoryListing == null) {
-        //     System.err.println(dir.toString() + " not found");
-
-        // } else {
-
-        //     System.out.println("Query: " + query);
-
-        //     for (File f : directoryListing) {
-
-        //         System.out.println("File: " + f.getName());
-        //         System.out.println(SnippetFactory.getSnippetTrivial(f, query) + "\n");
-        //     }
-        // }
-
-        File testFile = new File("/mnt/c/Ryan/Work/College/UCR/Spring 2020/CS_172/Projects/sample_scrape/output/https___www.cs.ucr.edu_~mchow009_teaching_cs147_winter20_lab4");
-        String snippet = SnippetFactory.getSnippet(testFile, query);
-        System.out.println("Snippet:\n" + snippet);
-    }
-
     private static double clusterDensity(String[] bodyTextWords, Set<String> queryTerms, int[] interval) {
 
         int freq = 0;
@@ -379,139 +417,139 @@ class SnippetFactory {
     private static Set<String> getStopwords() {
 
         if (SnippetFactory.stopwords != null)
-            return SnippetFactory.stopwords;
+            return stopwords;
 
-        SnippetFactory.stopwords = new HashSet<String>();
+        stopwords = new HashSet<String>();
 
-        SnippetFactory.stopwords.add("i");
-        SnippetFactory.stopwords.add("me");
-        SnippetFactory.stopwords.add("my");
-        SnippetFactory.stopwords.add("myself");
-        SnippetFactory.stopwords.add("we");
-        SnippetFactory.stopwords.add("our");
-        SnippetFactory.stopwords.add("ours");
-        SnippetFactory.stopwords.add("ourselves");
-        SnippetFactory.stopwords.add("you");
-        SnippetFactory.stopwords.add("your");
-        SnippetFactory.stopwords.add("yours");
-        SnippetFactory.stopwords.add("yourself");
-        SnippetFactory.stopwords.add("yourselves");
-        SnippetFactory.stopwords.add("he");
-        SnippetFactory.stopwords.add("him");
-        SnippetFactory.stopwords.add("his");
-        SnippetFactory.stopwords.add("himself");
-        SnippetFactory.stopwords.add("she");
-        SnippetFactory.stopwords.add("her");
-        SnippetFactory.stopwords.add("hers");
-        SnippetFactory.stopwords.add("herself");
-        SnippetFactory.stopwords.add("it");
-        SnippetFactory.stopwords.add("its");
-        SnippetFactory.stopwords.add("itself");
-        SnippetFactory.stopwords.add("they");
-        SnippetFactory.stopwords.add("them");
-        SnippetFactory.stopwords.add("their");
-        SnippetFactory.stopwords.add("theirs");
-        SnippetFactory.stopwords.add("themselves");
-        SnippetFactory.stopwords.add("what");
-        SnippetFactory.stopwords.add("which");
-        SnippetFactory.stopwords.add("who");
-        SnippetFactory.stopwords.add("whom");
-        SnippetFactory.stopwords.add("this");
-        SnippetFactory.stopwords.add("that");
-        SnippetFactory.stopwords.add("these");
-        SnippetFactory.stopwords.add("those");
-        SnippetFactory.stopwords.add("am");
-        SnippetFactory.stopwords.add("is");
-        SnippetFactory.stopwords.add("are");
-        SnippetFactory.stopwords.add("was");
-        SnippetFactory.stopwords.add("were");
-        SnippetFactory.stopwords.add("be");
-        SnippetFactory.stopwords.add("been");
-        SnippetFactory.stopwords.add("being");
-        SnippetFactory.stopwords.add("have");
-        SnippetFactory.stopwords.add("has");
-        SnippetFactory.stopwords.add("had");
-        SnippetFactory.stopwords.add("having");
-        SnippetFactory.stopwords.add("do");
-        SnippetFactory.stopwords.add("does");
-        SnippetFactory.stopwords.add("did");
-        SnippetFactory.stopwords.add("doing");
-        SnippetFactory.stopwords.add("a");
-        SnippetFactory.stopwords.add("an");
-        SnippetFactory.stopwords.add("the");
-        SnippetFactory.stopwords.add("and");
-        SnippetFactory.stopwords.add("but");
-        SnippetFactory.stopwords.add("if");
-        SnippetFactory.stopwords.add("or");
-        SnippetFactory.stopwords.add("because");
-        SnippetFactory.stopwords.add("as");
-        SnippetFactory.stopwords.add("until");
-        SnippetFactory.stopwords.add("while");
-        SnippetFactory.stopwords.add("of");
-        SnippetFactory.stopwords.add("at");
-        SnippetFactory.stopwords.add("by");
-        SnippetFactory.stopwords.add("for");
-        SnippetFactory.stopwords.add("with");
-        SnippetFactory.stopwords.add("about");
-        SnippetFactory.stopwords.add("against");
-        SnippetFactory.stopwords.add("between");
-        SnippetFactory.stopwords.add("into");
-        SnippetFactory.stopwords.add("through");
-        SnippetFactory.stopwords.add("during");
-        SnippetFactory.stopwords.add("before");
-        SnippetFactory.stopwords.add("after");
-        SnippetFactory.stopwords.add("above");
-        SnippetFactory.stopwords.add("below");
-        SnippetFactory.stopwords.add("to");
-        SnippetFactory.stopwords.add("from");
-        SnippetFactory.stopwords.add("up");
-        SnippetFactory.stopwords.add("down");
-        SnippetFactory.stopwords.add("in");
-        SnippetFactory.stopwords.add("out");
-        SnippetFactory.stopwords.add("on");
-        SnippetFactory.stopwords.add("off");
-        SnippetFactory.stopwords.add("over");
-        SnippetFactory.stopwords.add("under");
-        SnippetFactory.stopwords.add("again");
-        SnippetFactory.stopwords.add("further");
-        SnippetFactory.stopwords.add("then");
-        SnippetFactory.stopwords.add("once");
-        SnippetFactory.stopwords.add("here");
-        SnippetFactory.stopwords.add("there");
-        SnippetFactory.stopwords.add("when");
-        SnippetFactory.stopwords.add("where");
-        SnippetFactory.stopwords.add("why");
-        SnippetFactory.stopwords.add("how");
-        SnippetFactory.stopwords.add("all");
-        SnippetFactory.stopwords.add("any");
-        SnippetFactory.stopwords.add("both");
-        SnippetFactory.stopwords.add("each");
-        SnippetFactory.stopwords.add("few");
-        SnippetFactory.stopwords.add("more");
-        SnippetFactory.stopwords.add("most");
-        SnippetFactory.stopwords.add("other");
-        SnippetFactory.stopwords.add("some");
-        SnippetFactory.stopwords.add("such");
-        SnippetFactory.stopwords.add("no");
-        SnippetFactory.stopwords.add("nor");
-        SnippetFactory.stopwords.add("not");
-        SnippetFactory.stopwords.add("only");
-        SnippetFactory.stopwords.add("own");
-        SnippetFactory.stopwords.add("same");
-        SnippetFactory.stopwords.add("so");
-        SnippetFactory.stopwords.add("than");
-        SnippetFactory.stopwords.add("too");
-        SnippetFactory.stopwords.add("very");
-        SnippetFactory.stopwords.add("s");
-        SnippetFactory.stopwords.add("t");
-        SnippetFactory.stopwords.add("can");
-        SnippetFactory.stopwords.add("will");
-        SnippetFactory.stopwords.add("just");
-        SnippetFactory.stopwords.add("don");
-        SnippetFactory.stopwords.add("should");
-        SnippetFactory.stopwords.add("now");
+        stopwords.add("i");
+        stopwords.add("me");
+        stopwords.add("my");
+        stopwords.add("myself");
+        stopwords.add("we");
+        stopwords.add("our");
+        stopwords.add("ours");
+        stopwords.add("ourselves");
+        stopwords.add("you");
+        stopwords.add("your");
+        stopwords.add("yours");
+        stopwords.add("yourself");
+        stopwords.add("yourselves");
+        stopwords.add("he");
+        stopwords.add("him");
+        stopwords.add("his");
+        stopwords.add("himself");
+        stopwords.add("she");
+        stopwords.add("her");
+        stopwords.add("hers");
+        stopwords.add("herself");
+        stopwords.add("it");
+        stopwords.add("its");
+        stopwords.add("itself");
+        stopwords.add("they");
+        stopwords.add("them");
+        stopwords.add("their");
+        stopwords.add("theirs");
+        stopwords.add("themselves");
+        stopwords.add("what");
+        stopwords.add("which");
+        stopwords.add("who");
+        stopwords.add("whom");
+        stopwords.add("this");
+        stopwords.add("that");
+        stopwords.add("these");
+        stopwords.add("those");
+        stopwords.add("am");
+        stopwords.add("is");
+        stopwords.add("are");
+        stopwords.add("was");
+        stopwords.add("were");
+        stopwords.add("be");
+        stopwords.add("been");
+        stopwords.add("being");
+        stopwords.add("have");
+        stopwords.add("has");
+        stopwords.add("had");
+        stopwords.add("having");
+        stopwords.add("do");
+        stopwords.add("does");
+        stopwords.add("did");
+        stopwords.add("doing");
+        stopwords.add("a");
+        stopwords.add("an");
+        stopwords.add("the");
+        stopwords.add("and");
+        stopwords.add("but");
+        stopwords.add("if");
+        stopwords.add("or");
+        stopwords.add("because");
+        stopwords.add("as");
+        stopwords.add("until");
+        stopwords.add("while");
+        stopwords.add("of");
+        stopwords.add("at");
+        stopwords.add("by");
+        stopwords.add("for");
+        stopwords.add("with");
+        stopwords.add("about");
+        stopwords.add("against");
+        stopwords.add("between");
+        stopwords.add("into");
+        stopwords.add("through");
+        stopwords.add("during");
+        stopwords.add("before");
+        stopwords.add("after");
+        stopwords.add("above");
+        stopwords.add("below");
+        stopwords.add("to");
+        stopwords.add("from");
+        stopwords.add("up");
+        stopwords.add("down");
+        stopwords.add("in");
+        stopwords.add("out");
+        stopwords.add("on");
+        stopwords.add("off");
+        stopwords.add("over");
+        stopwords.add("under");
+        stopwords.add("again");
+        stopwords.add("further");
+        stopwords.add("then");
+        stopwords.add("once");
+        stopwords.add("here");
+        stopwords.add("there");
+        stopwords.add("when");
+        stopwords.add("where");
+        stopwords.add("why");
+        stopwords.add("how");
+        stopwords.add("all");
+        stopwords.add("any");
+        stopwords.add("both");
+        stopwords.add("each");
+        stopwords.add("few");
+        stopwords.add("more");
+        stopwords.add("most");
+        stopwords.add("other");
+        stopwords.add("some");
+        stopwords.add("such");
+        stopwords.add("no");
+        stopwords.add("nor");
+        stopwords.add("not");
+        stopwords.add("only");
+        stopwords.add("own");
+        stopwords.add("same");
+        stopwords.add("so");
+        stopwords.add("than");
+        stopwords.add("too");
+        stopwords.add("very");
+        stopwords.add("s");
+        stopwords.add("t");
+        stopwords.add("can");
+        stopwords.add("will");
+        stopwords.add("just");
+        stopwords.add("don");
+        stopwords.add("should");
+        stopwords.add("now");
 
-        return SnippetFactory.stopwords;
+        return stopwords;
     }
 
     private static final String SPLIT_REGEX = " ";
