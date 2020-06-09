@@ -11,25 +11,48 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - uses: docker/build-push-action@v1.1.0
+      - uses: azure/docker-login@v1
         with:
           username: MrFlynn
           password: ${{ secrets.GITHUB_TOKEN }}
-          registry: docker.pkg.github.com
-          repository: docker.pkg.github.com/mrflynn/voyager/backend
-          tag_with_ref: true
-          tags: latest
+          login-server: docker.pkg.github.com
+      - name: Build image
+        run: |
+          docker build -t \
+            docker.pkg.github.com/mrflynn/voyager/backend:${GITHUB_REF##*/} .
+      - name: Tag with latest
+        run: |
+          docker tag \
+            docker.pkg.github.com/mrflynn/voyager/backend:${GITHUB_REF##*/} \
+            docker.pkg.github.com/mrflynn/voyager/backend:latest
+      - name: Publish images
+        run: |
+          docker push \
+            docker.pkg.github.com/mrflynn/voyager/backend:${GITHUB_REF##*/}
+          docker push \
+            docker.pkg.github.com/mrflynn/voyager/backend:latest
   web-docker:
     name: Build web Docker image.
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - uses: docker/build-push-action@v1.1.0
+      - uses: azure/docker-login@v1
         with:
           username: MrFlynn
           password: ${{ secrets.GITHUB_TOKEN }}
-          registry: docker.pkg.github.com
-          path: web/
-          repository: docker.pkg.github.com/mrflynn/voyager/web
-          tag_with_ref: true
-          tags: latest
+          login-server: docker.pkg.github.com
+      - name: Build image
+        run: |
+          docker build -t \
+            docker.pkg.github.com/mrflynn/voyager/web:${GITHUB_REF##*/} web/
+      - name: Tag with latest
+        run: |
+          docker tag \
+            docker.pkg.github.com/mrflynn/voyager/web:${GITHUB_REF##*/} \
+            docker.pkg.github.com/mrflynn/voyager/web:latest
+      - name: Publish images
+        run: |
+          docker push \
+            docker.pkg.github.com/mrflynn/voyager/web:${GITHUB_REF##*/}
+          docker push \
+            docker.pkg.github.com/mrflynn/voyager/web:latest
