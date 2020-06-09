@@ -96,6 +96,11 @@ public class SearchController {
         indexWriter.close();
     }
 
+    @GetMapping("/health")
+    public String health() {
+        return "OK";
+    }
+
     @GetMapping("/search")
     public List<Result> search(
             //TODO switch to List<Article>
@@ -121,11 +126,16 @@ public class SearchController {
         }
 
         for (int i = (maxcount - 9); i <= maxcount; i++) {
-            Document doc = indexSearcher.doc(docs[i-1].doc);
+          
+            ScoreDoc scoreDoc = docs[i-1];
+            Document doc = indexSearcher.doc(scoreDoc.doc);
+          
             String snippet = SnippetFactory.getSnippet(doc.getField("content").stringValue(), query);
+          
             Result res = new Result(
                     doc.getField("URL").stringValue(),
                     doc.getField("title").stringValue(),
+                    scoreDoc.score,
                     snippet
             );
             request_body.add(res);
