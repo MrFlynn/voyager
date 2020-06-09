@@ -2,7 +2,7 @@ version: '3'
 
 services:
   backend:
-    image: docker.pkg.github.com/mrflynn/voyager/backend:latest
+    image: mrflynn/voyager-backend:latest
     ports:
       - "5000"
     healthcheck:
@@ -13,7 +13,7 @@ services:
     volumes:
       - ${DATA_DIR}:/data:ro
   web:
-    image: docker.pkg.github.com/mrflynn/voyager/web:latest
+    image: mrflynn/voyager-web:latest
     ports:
       - "80:80"
     depends_on:
