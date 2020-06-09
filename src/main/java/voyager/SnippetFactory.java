@@ -19,12 +19,8 @@ import org.jsoup.nodes.Document;
 import org.jsoup.Jsoup;
 
 public class SnippetFactory {
-
-
-
     // Wrapper for getSnippet(bodyText, query)
     public static String getSnippet(URL url, String query) {
-
         StringBuilder sb = new StringBuilder();
 
         try {
@@ -35,7 +31,7 @@ public class SnippetFactory {
         } catch (IOException e) {
 
             System.err.println("Jsoup couldn't connect to \"" + url + "\"");
-            sb.append("A snippet couldn't be produced for the url " + url);
+            sb.append("A snippet couldn't be produced for the url ").append(url);
         }
 
         return sb.toString();
@@ -43,7 +39,6 @@ public class SnippetFactory {
 
     // Wrapper for getSnippet(bodyText, query)
     public static String getSnippet(File file, String query) {
-
         StringBuilder sb = new StringBuilder();
 
         try {
@@ -54,14 +49,13 @@ public class SnippetFactory {
         } catch (IOException e) {
 
             System.err.println("Jsoup encountered an error parsing " + file.getName());
-            sb.append("A snippet couldn't be produced for the file " + file.getName());
+            sb.append("A snippet couldn't be produced for the file ").append(file.getName());
         }
 
         return sb.toString();
     }
 
     public static String getSnippet(String bodyText, String query) {
-
         StringBuilder sb = new StringBuilder();
 
         String[] bodyTextWords = bodyText.split(SPLIT_REGEX);
@@ -78,7 +72,6 @@ public class SnippetFactory {
             sb.append(uninformedSnippet(bodyTextWords, 255, 30));
 
         else {
-
             // Try different numbers of clusters, 1 thru 4
             // Then, pick the best k value from the clusters generated
             List< List<int[]> > setsOfClusters = new ArrayList< List<int[]> >();
@@ -113,7 +106,7 @@ public class SnippetFactory {
 
             if (charCount + word.length() + 1 < hi) {
 
-                snippet.append(word + " ");
+                snippet.append(word).append(" ");
                 charCount += word.length() + 1;
             }
 
@@ -136,8 +129,7 @@ public class SnippetFactory {
 
         // Sort clusters by their density,
         // in descending order (i.e. most dense first)
-        Collections.sort(clusters, new Comparator<int[]>() {
-
+        clusters.sort(new Comparator<int[]>() {
             public int compare(int[] interval1, int[] interval2) {
 
                 double density1 = clusterDensity(bodyTextWords, queryTerms, interval1);
@@ -151,11 +143,8 @@ public class SnippetFactory {
 
         // Prioritize the densest clusters first
         do {
-
             int[] currentCluster = clusters.get(clusterIndex);
             clusterIndex++;
-
-
 
             // Add surrounding text before the interval
 
@@ -185,8 +174,6 @@ public class SnippetFactory {
             // Then, pop stack onto the end of the snippet
             while (!surroundingTextLeft.isEmpty())
                 snippet.append(surroundingTextLeft.pop());
-            
-
 
             // Add the words inside the interval
             for (int i = currentCluster[0]; i <= currentCluster[1]; i++) {
@@ -200,8 +187,6 @@ public class SnippetFactory {
                 snippet.append(i == currentCluster[1] ? "" : " ");  // only append spaces in the middle
             }
 
-
-
             // If possible, append up to 7 words after the interval
             for (int i = currentCluster[1] + 1;
                 i < bodyTextWords.length && i < currentCluster[1] + 1 + 7;
@@ -213,7 +198,7 @@ public class SnippetFactory {
                 if (snippet.length() + charCount > hi)
                     break;
 
-                snippet.append(" " + bodyTextWords[i]);
+                snippet.append(" ").append(bodyTextWords[i]);
             }
 
             // Separate clusters of words with ...
@@ -221,14 +206,11 @@ public class SnippetFactory {
 
         } while (lo > snippet.length() && clusterIndex < clusters.size());
 
-
-
         return snippet.toString();
     }
 
 
     private static List<int[]> getClustersKMeans(List<Integer> queryMatches, int k) {
-
         // Algorithm adapted from the following tutorial:
         // https://www.youtube.com/watch?v=4b5d3muPQmA
 
@@ -243,8 +225,6 @@ public class SnippetFactory {
         Collections.sort(centroids);
         Collections.sort(queryMatches); // clean up after yourself
 
-
-        
         List<Integer> prevCentroids;
 
         // Recluster until centroid locations do not change
@@ -264,8 +244,6 @@ public class SnippetFactory {
             // For each match, find its distance to each centroid,
             // and set its value to the centroid it's closest to
             for (Integer currentQueryMatch : queryMatches) {
-
-
 
                 // If we're on the last random point,
                 // just include all remaining queryMatches
@@ -319,7 +297,6 @@ public class SnippetFactory {
 
     // For debug printing
     private static String clustersToString(List<int[]> clusters) {
-
         StringBuilder sb = new StringBuilder();
         sb.append("{");
 
@@ -338,7 +315,6 @@ public class SnippetFactory {
     // setsOfClusters needs to have exactly 1 cluster
     // for each value of k in the range [1, queryMatches.size()].
     private static int pickK(List< List<int[]>> setsOfClusters) {
-
         Map<Integer, Integer> kToVariance = new HashMap<Integer, Integer>();
 
         for (List<int[]> clusters : setsOfClusters) {
@@ -348,8 +324,6 @@ public class SnippetFactory {
                 kToVariance.put(clusters.size(), variance(clusters));
             }
         }
-
-
         
         int maxDiff = 0;
         int kWithMaxDiff = 1;
@@ -371,7 +345,6 @@ public class SnippetFactory {
     }
 
     private static int variance(List<int[]> clusters) {
-
         int v = 0;
 
         for (int[] cluster : clusters)
@@ -381,7 +354,6 @@ public class SnippetFactory {
     }
 
     private static int getCharCount(String[] bodyTextWords, int[] interval) {
-
         int charCount = 0;
 
         for (int i = interval[0]; i <= interval[1]; i++)
@@ -391,7 +363,6 @@ public class SnippetFactory {
     }
 
     private static List<Integer> getQueryMatches(String[] bodyTextWords, Set<String> queryTerms) {
-
         List<Integer> occurrences = new ArrayList<Integer>();
 
         for (int i = 0; i < bodyTextWords.length; i++)
@@ -402,7 +373,6 @@ public class SnippetFactory {
     }
 
     private static double clusterDensity(String[] bodyTextWords, Set<String> queryTerms, int[] interval) {
-
         int freq = 0;
 
         for (int i = interval[0]; i <= interval[1]; i++) {
@@ -418,11 +388,12 @@ public class SnippetFactory {
     // taken from here:
     // https://gist.github.com/sebleier/554280
     private static Set<String> getStopwords() {
+        return stopwords;
+    }
 
-        if (stopwords != null)
-            return stopwords;
+    private static final String SPLIT_REGEX = " ";
 
-        String[] stopwordsArr = {
+    private static final String[] stopwordsInitializer = {
             "i",
             "me",
             "my",
@@ -550,16 +521,10 @@ public class SnippetFactory {
             "don",
             "should",
             "now"
-        };
-
-        stopwords = new HashSet<String>(Arrays.asList(stopwordsArr));
-
-        return stopwords;
-    }
-
-    private static final String SPLIT_REGEX = " ";
+    };
 
     // Please access through getStopwords(),
     // even from within SnippetFactory
-    private static Set<String> stopwords = null;
+    private static final Set<String> stopwords =
+            new HashSet<>(Arrays.asList(stopwordsInitializer));
 }
