@@ -8,6 +8,9 @@ RUN npm install && \
 
 FROM nginx:stable-alpine as prod
 
+RUN apk add curl
+
+COPY service-wait /bin/service-wait
 COPY nginx.conf /etc/nginx.conf
 COPY --from=build /build/dist /var/www/html/static
 

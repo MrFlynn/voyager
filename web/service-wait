@@ -1,0 +1,15 @@
+#!/bin/sh
+# Wait until backend service has started. This entire file is fucking pointless.
+# It only exists because Docker is run by a bunch of lazy engineers who remove
+# useful features because "it's too complicated." I thought we learned our 
+# lesson with using shell scripts to manage service dependencies from Linux 
+# because it worked so well for them.
+
+set -e
+
+until curl -fs http://backend:5000/api/health; do
+  sleep 5
+done
+
+>&2 echo -e "Service is now running at http://localhost"
+exec "$@"

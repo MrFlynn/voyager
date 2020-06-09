@@ -14,6 +14,7 @@ services:
       - ${DATA_DIR}:/data:ro
   web:
     image: mrflynn/voyager-web:latest
+    command: [ "/bin/service-wait", "nginx", "-c", "/etc/nginx.conf" ]
     ports:
       - "80:80"
     depends_on:
