@@ -183,7 +183,11 @@ public class SnippetFactory {
                 if (snippet.length() + bodyTextWords[i].length() + 4 > hi)    // account for "... "
                     break;
 
-                snippet.append(bodyTextWords[i]);
+                // If this word is a query term,
+                // bold it in the snippet
+                snippet.append(queryTerms.contains(bodyTextWords[i]) ?
+                    "<b>" + bodyTextWords[i] + "</b>" :
+                    bodyTextWords[i];
                 snippet.append(i == currentCluster[1] ? "" : " ");  // only append spaces in the middle
             }
 
