@@ -187,7 +187,7 @@ public class SnippetFactory {
                 // bold it in the snippet
                 snippet.append(queryTerms.contains(bodyTextWords[i]) ?
                     "<b>" + bodyTextWords[i] + "</b>" :
-                    bodyTextWords[i];
+                    bodyTextWords[i]);
                 snippet.append(i == currentCluster[1] ? "" : " ");  // only append spaces in the middle
             }
 
