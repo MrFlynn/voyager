@@ -8,8 +8,8 @@
             ><strong>{{ this.title }}</strong></a
           >
           <br />
-          {{ this.description }}
         </p>
+        <p v-html="description">{{ description }}</p>
       </div>
     </div>
   </div>

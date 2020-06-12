@@ -183,7 +183,11 @@ public class SnippetFactory {
                 if (snippet.length() + bodyTextWords[i].length() + 4 > hi)    // account for "... "
                     break;
 
-                snippet.append(bodyTextWords[i]);
+                String word = bodyTextWords[i];
+                if (queryTerms.contains(word.toLowerCase()))
+                    word = "<b>" + word + "</b>";
+
+                snippet.append(word);
                 snippet.append(i == currentCluster[1] ? "" : " ");  // only append spaces in the middle
             }
 
@@ -198,7 +202,11 @@ public class SnippetFactory {
                 if (snippet.length() + charCount > hi)
                     break;
 
-                snippet.append(" ").append(bodyTextWords[i]);
+                String word = bodyTextWords[i];
+                if (queryTerms.contains(word.toLowerCase()))
+                    word = "<b>" + word + "</b>";
+
+                snippet.append(" ").append(word);
             }
 
             // Separate clusters of words with ...
